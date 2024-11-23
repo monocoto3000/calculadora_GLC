@@ -1,100 +1,61 @@
-from flask import Flask, render_template, request, jsonify
-from lark import Lark, Tree, Transformer
-from graphviz import Digraph
-import os
-import time
+import ply.lex as lex
+from collections import defaultdict
 
-app = Flask(__name__)
+tokens = (
+    'DECIMAL',
+    'ENTERO',
+    'SUMA',
+    'RESTA',
+    'MULT',
+    'DIV',
+    'LPAREN',
+    'RPAREN',
+)
 
-grammar = """
-?start: expr
+t_SUMA    = r'\+'
+t_RESTA   = r'-'
+t_MULT    = r'\*'
+t_DIV     = r'/'
+t_LPAREN  = r'\('
+t_RPAREN  = r'\)'
 
-?expr: expr"+"term    -> suma
-     | expr"-"term    -> resta
-     | term
+token_frequencies = defaultdict(int)
+token_values = []
 
-?term: term"*"factor  -> mul
-     | term"/"factor  -> div
-     | factor
+def t_DECIMAL(t):
+    r'\d*\.\d+'
+    t.value = float(t.value)
+    token_frequencies['DECIMAL'] += 1
+    token_values.append(('DECIMAL', t.value))
+    return t
 
-?factor: "("expr")"   -> grupo
-       | NUMBER       -> numero
+def t_ENTERO(t):
+    r'\d+'
+    t.value = int(t.value)
+    token_frequencies['ENTERO'] += 1
+    token_values.append(('ENTERO', t.value))
+    return t
 
-NUMBER: /[0-9]+(\.[0-9]+)?/
+def t_error(t):
+    print(f"Caracter invalido '{t.value[0]}'")
+    t.lexer.skip(1)
 
-%import common.WS
-%ignore WS
-"""
+t_ignore = ' \t'
 
-parser = Lark(grammar, parser="lalr")
+lexer = lex.lex()
 
-class createTree(Transformer):
-    def suma(self, items):
-        return items[0] + items[1]
-
-    def resta(self, items):
-        return items[0] - items[1]
-
-    def mul(self, items):
-        return items[0] * items[1]
-
-    def div(self, items):
-        return float(items[0]) / float(items[1])
-
-    def numero(self, items):
-        value = float(items[0])  
-        return value
-
-    def grupo(self, items):
-        return items[0]
-
-evaluator = createTree()
-
-def generateTree(tree):
-    dot = Digraph()
-    node_count = 0
-
-    def add_nodes_edges(node, parent=None):
-        nonlocal node_count
-        current_id = str(node_count)
-        label = node.data if isinstance(node, Tree) else str(node)
-        dot.node(current_id, label)
-        if parent is not None:
-            dot.edge(parent, current_id)
-        node_count += 1
-
-        if isinstance(node, Tree):
-            for child in node.children:
-                add_nodes_edges(child, current_id)
-
-    add_nodes_edges(tree)
+def analyze_expression(expression):
+    token_frequencies.clear()
+    token_values.clear()
     
-    timestamp = str(int(time.time() * 1000))  
-    file_name = f"tree_{timestamp}"  
-    file_path = os.path.join("static", file_name)
+    lexer.input(expression)
     
-    dot.format = "svg"
-    dot.render(file_path, cleanup=True)
+    while True:
+        tok = lexer.token()
+        if not tok:
+            break
+        if tok.type in ['SUMA', 'RESTA', 'MULT', 'DIV', 'LPAREN', 'RPAREN']:
+            token_frequencies[tok.type] += 1
+            token_values.append((tok.type, tok.value))
     
-    return f"{file_name}.svg"
-
-@app.route("/")
-def index():
-    return render_template("index.html")
-
-@app.route("/calcular", methods=["POST"])
-def calcular():
-    data = request.json
-    expression = data.get("expression")
-
-    try:
-        tree = parser.parse(expression)
-        print(tree)
-        result = evaluator.transform(tree)
-        tree_image = generateTree(tree)
-        return jsonify({"valid": True, "result": result, "tree": tree_image})
-    except Exception as e:
-        return jsonify({"valid": False, "error": str(e)})
-
-if __name__ == "__main__":
-    app.run(debug=True)
+    return token_values, dict(token_frequencies)
