@@ -35,6 +35,9 @@ $(document).ready(function () {
             $("#tree").attr("src", "");
             $("#token-values-table tbody").empty();
             $("#token-frequencies-table tbody").empty();
+        } else if (value === "backspace") {
+            expression = expression.slice(0, -1);
+            $("#display").text(expression);
         } else if (value !== undefined) {
             expression += value;
             $("#display").text(expression);

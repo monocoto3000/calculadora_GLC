@@ -8,16 +8,16 @@ tokens = (
     'RESTA',
     'MULT',
     'DIV',
-    'LPAREN',
-    'RPAREN',
+    'PAREN_IZQ',
+    'PAREN_DER',
 )
 
 t_SUMA    = r'\+'
 t_RESTA   = r'-'
 t_MULT    = r'\*'
 t_DIV     = r'/'
-t_LPAREN  = r'\('
-t_RPAREN  = r'\)'
+t_PAREN_IZQ  = r'\('
+t_PAREN_DER  = r'\)'
 
 token_frequencies = defaultdict(int)
 token_values = []
@@ -54,7 +54,7 @@ def analyze_expression(expression):
         tok = lexer.token()
         if not tok:
             break
-        if tok.type in ['SUMA', 'RESTA', 'MULT', 'DIV', 'LPAREN', 'RPAREN']:
+        if tok.type in ['SUMA', 'RESTA', 'MULT', 'DIV', 'PAREN_IZQ', 'PAREN_DER']:
             token_frequencies[tok.type] += 1
             token_values.append((tok.type, tok.value))
     
