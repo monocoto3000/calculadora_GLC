@@ -1,6 +1,20 @@
 $(document).ready(function () {
     let expression = "";
+    let memoryValue = null; 
 
+    $(".buttons").append(`
+        <button class="button memory" id="ms">MS</button>
+        <button class="button memory" id="mr">MR</button>
+    `);
+
+    $("#negativo").click(function() {
+        if (expression === "" || 
+            ['+', '-', '*', '/', '('].includes(expression.slice(-1))) {
+            expression += "-";
+            $("#display").text(expression);
+        }
+    });
+    
     function updateTokenValuesTable(tokenValues) {
         const tbody = $("#token-values-table tbody");
         tbody.empty();
@@ -41,6 +55,35 @@ $(document).ready(function () {
         } else if (value !== undefined) {
             expression += value;
             $("#display").text(expression);
+        }
+    });
+
+    $("#ms").click(function() {
+        if ($("#display").text() !== "") {
+            $.ajax({
+                url: "/calcular",
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({ expression }),
+                success: function (response) {
+                    if (response.valid) {
+                        memoryValue = response.result;
+                        alert(`Valor ${memoryValue} guardado en memoria`);
+                    }
+                },
+                error: function () {
+                    alert("Error al guardar valor en memoria");
+                }
+            });
+        }
+    });
+
+    $("#mr").click(function() {
+        if (memoryValue !== null) {
+            expression += memoryValue.toString();
+            $("#display").text(expression);
+        } else {
+            alert("No hay ningún valor en memoria");
         }
     });
 

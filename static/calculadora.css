@@ -116,3 +116,14 @@ th {
 tr:nth-child(even) {
     background-color: #fff0f6;
 }
+
+.button.memory {
+    background-color: #4CAF50;
+    color: white;
+    font-weight: bold;
+    grid-column: span 2;
+}
+
+.memory:hover {
+    background-color: #45a049;
+}

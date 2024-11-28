@@ -18,8 +18,9 @@ grammar = """
      | term"/"factor  -> div
      | factor
 
-?factor: "("expr")"   -> grupo
-       | NUMBER       -> numero
+?factor: NUMBER       -> numero
+       | "("expr")"   -> grupo
+       | "-"factor    -> negativo
 
 NUMBER: /[0-9]+(\.[0-9]+)?/
 
@@ -48,6 +49,9 @@ class createTree(Transformer):
 
     def grupo(self, items):
         return items[0]
+
+    def negativo(self, items):
+        return -items[0]
 
 evaluator = createTree()
 
